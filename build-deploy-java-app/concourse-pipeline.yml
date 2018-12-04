@@ -1,0 +1,90 @@
+resource_types:
+- name: artifactory
+  type: docker-image
+  source:
+    repository: pivotalservices/artifactory-resource
+
+resources:
+- name: source-code
+  type: git
+  source:
+    uri: ((source-code-repo))
+    branch: master
+    private_key: ((private-key))
+
+- name: cf-app
+  type: cf
+  source:
+    api: ((cf-api-url))
+    username: ((cf-username))
+    password: ((cf-password))
+    organization: ((cf-org))
+    space: ((cf-space))
+    skip_cert_check: true
+
+- name: source-code-build
+  type: artifactory
+  source:
+    endpoint: ((artifactory-endpoint))
+    repository: ((artifactory-app-repo))
+    regex: ((artifactory-app-regex))
+    username: ((artifactory-username))
+    password: ((artifactory-password))
+    skip_ssl_verification: true
+
+- name: version
+  type: semver
+  source:
+    driver: git
+    uri: ((source-code-repo))
+    branch: version
+    file: version
+    private_key: ((private-key))
+
+jobs:
+- name: build-((repo-name))-save-to-artifactory
+  plan:
+  - get: source-code
+    trigger: true
+  - get: version
+    params: {bump: ((bump-version))}
+  - task: build_app
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: gradle
+          tag: 4.9-jdk-alpine
+      inputs:
+        - name: source-code
+        - name: version
+      outputs:
+        - name: build
+      run:
+        user: root
+        path: sh
+        args:
+        - -exc
+        - |
+          NewVersion=`cat version/version`
+          cd source-code
+          gradle clean check test jacocoTestReport bootJar --stacktrace -P version=$NewVersion
+          ls -lht ./build/libs
+          cp ./build/libs/*.jar ../build
+  - put: source-code-build
+    params: { file: ./build/((repo-name))-*.jar }
+  - put: version
+    params: {file: version/version}
+
+- name: deploy_((repo-name))_to_cloudfoundry
+  serial: true
+  plan:
+  - get: source-code-build
+    passed: ['build-((repo-name))-save-to-artifactory']
+    trigger: true
+  - get: source-code
+  - put: cf-app
+    params:
+      manifest: source-code/manifest.yml
+      path: source-code-build/((repo-name))-*.jar
