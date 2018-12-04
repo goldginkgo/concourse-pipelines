@@ -8,6 +8,8 @@ Test applications for each buildpack should be ready.
 
 We will build the Java app and upload jar file to Artifactory first.
 
+A repository with all the contents in this folder should be created in Github/Gitlab because it's a parameter for the pipeline.
+
 The following docker images are used by the pipelines. Please host the images locally if the environment doesn't have access to Internet.
 * pivotalservices/artifactory-resource
 * pcfnorm/rootfs
@@ -38,9 +40,6 @@ fly -t local trigger-job -j buildpack_automated_testing/deploy-java-app
 fly -t local trigger-job -j buildpack_automated_testing/deploy-java-v4-app
 fly -t local trigger-job -j buildpack_automated_testing/deploy-java-offline-app
 fly -t local trigger-job -j buildpack_automated_testing/deploy-java-offline-v4-app
-fly -t local trigger-job -j buildpack_automated_testing/deploy-java-jce-offline-app
-fly -t local trigger-job -j buildpack_automated_testing/deploy-java-jce-offline-v4-app
-fly -t local trigger-job -j buildpack_automated_testing/deploy-java-oracle-offline-app
 ~~~
 
 ## Destroy pipeline

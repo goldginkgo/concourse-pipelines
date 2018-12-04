@@ -3,7 +3,7 @@
 This is a pipeline to build Java app, upload to Artifactory and then deploy to Cloud Foundry.
 
 ## Setup Concourse pipeline ##
-Create params.yml file under the cloned repository. Replace the values with actually ones.
+Put the pipeline and params.yml under your cloned code repository. Replace the values with actually ones in params.yml.
 
 Valid values for bump-version: major, minor, patch, final.
 ~~~
