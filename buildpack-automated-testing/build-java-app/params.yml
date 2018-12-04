@@ -1,0 +1,8 @@
+git-username: CHANGEME
+git-password: CHANGEME
+artifactory-endpoint: CHANGEME
+artifactory-username: CHANGEME
+artifactory-password: CHANGEME
+artifactory-java-app-repo: CHANGEME
+artifactory-java-app-regex: CHANGEME
+cf-test-app-java-repo:  CHANGEME

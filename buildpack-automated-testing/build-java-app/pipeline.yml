@@ -1,0 +1,54 @@
+resource_types:
+- name: artifactory
+  type: docker-image
+  source:
+    repository: pivotalservices/artifactory-resource
+
+resources:
+- name: java-test-app-build
+  type: artifactory
+  source:
+    endpoint: {{artifactory-endpoint}}
+    repository: {{artifactory-java-app-repo}}
+    regex: {{artifactory-java-app-regex}}
+    username: {{artifactory-username}}
+    password: {{artifactory-password}}
+    skip_ssl_verification: true
+
+- name: cf-test-app-java
+  type: git
+  source:
+    uri: {{cf-test-app-java-repo}}
+    branch: master
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+jobs:
+- name: build-java-app-and-save-to-artifactory
+  plan:
+  - get: cf-test-app-java
+    trigger: true
+  - task: build_app
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: maven
+          tag: 3-jdk-8-alpine
+      inputs:
+        - name: cf-test-app-java
+      outputs:
+        - name: build
+      run:
+        path: sh
+        args:
+        - -exc
+        - |
+          ls -altr cf-test-app-java
+          mvn -f cf-test-app-java/pom.xml clean install
+          cp -f cf-test-app-java/target/JavaBuildpackTestApp-0.0.1-SNAPSHOT.jar build
+          ls -altr build
+  - put: java-test-app-build
+    params: { file: ./build/JavaBuildpackTestApp-*-SNAPSHOT.jar }

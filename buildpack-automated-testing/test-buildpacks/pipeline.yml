@@ -1,0 +1,484 @@
+resource_types:
+- name: artifactory
+  type: docker-image
+  source:
+    repository: pivotalservices/artifactory-resource
+
+resources:
+- name: cf-app
+  type: cf
+  source:
+    api: {{cf-api-url}}
+    username: {{cf-username}}
+    password: {{cf-password}}
+    organization: {{cf-org}}
+    space: {{cf-space}}
+    skip_cert_check: true
+
+- name: java-test-app-build
+  type: artifactory
+  source:
+    endpoint: {{artifactory-endpoint}}
+    repository: {{artifactory-java-app-repo}}
+    regex: {{artifactory-java-app-regex}}
+    username: {{artifactory-username}}
+    password: {{artifactory-password}}
+    skip_ssl_verification: true
+
+- name: concourse-pipelines
+  type: git
+  source:
+    uri: {{concourse-pipelines-repo}}
+    branch: master
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+- name: cf-test-app-staticfile
+  type: git
+  source:
+    uri: {{cf-test-app-staticfile-repo}}
+    branch: master
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+- name: cf-test-app-java
+  type: git
+  source:
+    uri: {{cf-test-app-java-repo}}
+    branch: master
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+- name: cf-test-app-dotnet
+  type: git
+  source:
+    uri: {{cf-test-app-dotnet-repo}}
+    branch: master
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+- name: cf-test-app-ruby
+  type: git
+  source:
+    uri: {{cf-test-app-ruby-repo}}
+    branch: fix-for-china
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+- name: cf-test-app-nodejs
+  type: git
+  source:
+    uri: {{cf-test-app-nodejs-repo}}
+    branch: master
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+- name: cf-test-app-go
+  type: git
+  source:
+    uri: {{cf-test-app-go-repo}}
+    branch: master
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+- name: cf-test-app-php
+  type: git
+  source:
+    uri: {{cf-test-app-php-repo}}
+    branch: master
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+- name: cf-test-app-binary
+  type: git
+  source:
+    uri: {{cf-test-app-binary-repo}}
+    branch: master
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+- name: cf-test-app-python
+  type: git
+  source:
+    uri: {{cf-test-app-python-repo}}
+    branch: master
+    username: {{git-username}}
+    password: {{git-password}}
+    skip_ssl_verification: true
+
+jobs:
+- name: deploy-staticfile-app
+  serial: true
+  plan:
+  - get: cf-test-app-staticfile
+    trigger: true
+  - put: cf-app
+    params:
+      manifest: cf-test-app-staticfile/manifest.yml
+      path: cf-test-app-staticfile
+
+- name: validate-staticfile-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-staticfile-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-app-staticfile
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-go-app
+  serial: true
+  plan:
+  - get: cf-test-app-go
+    trigger: true
+  - put: cf-app
+    params:
+      manifest: cf-test-app-go/manifest.yml
+      path: cf-test-app-go
+
+- name: validate-go-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-go-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-app-go
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-php-app
+  serial: true
+  plan:
+  - get: cf-test-app-php
+    trigger: true
+  - put: cf-app
+    params:
+      manifest: cf-test-app-php/manifest.yml
+      path: cf-test-app-php
+
+- name: validate-php-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-php-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-app-php
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-ruby-app
+  serial: true
+  plan:
+  - get: cf-test-app-ruby
+    trigger: true
+  - put: cf-app
+    params:
+      manifest: cf-test-app-ruby/manifest.yml
+      path: cf-test-app-ruby
+
+- name: validate-ruby-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-ruby-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-app-ruby
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-binary-app
+  serial: true
+  plan:
+  - get: cf-test-app-binary
+    trigger: true
+  - put: cf-app
+    params:
+      manifest: cf-test-app-binary/manifest.yml
+      path: cf-test-app-binary
+
+- name: validate-binary-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-binary-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-app-binary
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-python-app
+  serial: true
+  plan:
+  - get: cf-test-app-python
+    trigger: true
+  - put: cf-app
+    params:
+      manifest: cf-test-app-python/manifest.yml
+      path: cf-test-app-python
+
+- name: validate-python-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-python-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-app-python
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-nodejs-app
+  serial: true
+  plan:
+  - get: cf-test-app-nodejs
+    trigger: true
+  - put: cf-app
+    params:
+      manifest: cf-test-app-nodejs/manifest.yml
+      path: cf-test-app-nodejs
+
+- name: validate-nodejs-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-nodejs-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-app-nodejs
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-dotnet-app
+  serial: true
+  plan:
+  - get: cf-test-app-dotnet
+    trigger: true
+  - put: cf-app
+    params:
+      manifest: cf-test-app-dotnet/manifest.yml
+      path: cf-test-app-dotnet
+
+- name: validate-dotnet-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-dotnet-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-app-dotnet
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-java-app
+  plan:
+  - get: java-test-app-build
+    trigger: true
+  - get: cf-test-app-java
+  - put: cf-app
+    params:
+      manifest: cf-test-app-java/manifests/manifest_java_buildpack.yml
+      path: java-test-app-build/JavaBuildpackTestApp-0.0.1-SNAPSHOT.jar
+
+- name: validate-java-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-java-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-java_buildpack
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-java-v4-app
+  plan:
+  - get: java-test-app-build
+    trigger: true
+  - get: cf-test-app-java
+  - put: cf-app
+    params:
+      manifest: cf-test-app-java/manifests/manifest_java_buildpack_v4.yml
+      path: java-test-app-build/JavaBuildpackTestApp-0.0.1-SNAPSHOT.jar
+
+- name: validate-java-v4-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-java-v4-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-java_buildpack_v4
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-java-offline-app
+  plan:
+  - get: java-test-app-build
+    trigger: true
+  - get: cf-test-app-java
+  - put: cf-app
+    params:
+      manifest: cf-test-app-java/manifests/manifest_java_buildpack_offline.yml
+      path: java-test-app-build/JavaBuildpackTestApp-0.0.1-SNAPSHOT.jar
+
+- name: validate-java-offline-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-java-offline-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-java_buildpack_offline
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-java-offline-v4-app
+  plan:
+  - get: java-test-app-build
+    trigger: true
+  - get: cf-test-app-java
+  - put: cf-app
+    params:
+      manifest: cf-test-app-java/manifests/manifest_java_buildpack_offline_v4.yml
+      path: java-test-app-build/JavaBuildpackTestApp-0.0.1-SNAPSHOT.jar
+
+- name: validate-java-offline-v4-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-java-offline-v4-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-java_buildpack_offline_v4
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-java-jce-offline-app
+  plan:
+  - get: java-test-app-build
+    trigger: true
+  - get: cf-test-app-java
+  - put: cf-app
+    params:
+      manifest: cf-test-app-java/manifests/manifest_java_jce_buildpack_offline.yml
+      path: java-test-app-build/JavaBuildpackTestApp-0.0.1-SNAPSHOT.jar
+
+- name: validate-java-jce-offline-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-java-jce-offline-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-java_jce_buildpack_offline
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-java-jce-offline-v4-app
+  plan:
+  - get: java-test-app-build
+    trigger: true
+  - get: cf-test-app-java
+  - put: cf-app
+    params:
+      manifest: cf-test-app-java/manifests/manifest_java_jce_buildpack_offline_v4.yml
+      path: java-test-app-build/JavaBuildpackTestApp-0.0.1-SNAPSHOT.jar
+
+- name: validate-java-jce-offline-v4-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-java-jce-offline-v4-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-java_jce_buildpack_offline_v4
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+- name: deploy-java-oracle-offline-app
+  plan:
+  - get: java-test-app-build
+    trigger: true
+  - get: cf-test-app-java
+  - put: cf-app
+    params:
+      manifest: cf-test-app-java/manifests/manifest_java_oracle_buildpack_offline.yml
+      path: java-test-app-build/JavaBuildpackTestApp-0.0.1-SNAPSHOT.jar
+
+- name: validate-java-oracle-offline-app
+  serial: true
+  plan:
+  - get: cf-app
+    passed: ['deploy-java-oracle-offline-app']
+    trigger: true
+  - get: concourse-pipelines
+  - task: validate-app
+    file: concourse-pipelines/tasks/validate-app/task.yml
+    params:
+      APP_NAME: cf-test-java_oracle_buildpack_offline
+      CF_APP_URL: {{cf-apps-url}}
+      <<: *cf_params
+
+cf_params: &cf_params
+  CF_API_URL: {{cf-api-url}}
+  CF_USERNAME: {{cf-username}}
+  CF_PASSWORD: {{cf-password}}
+  CF_ORG: {{cf-org}}
+  CF_SPACE: {{cf-space}}
